@@ -1,0 +1,25 @@
+<!-- C:\Users\USER\Desktop\Fun\index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Phaser Prototype</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+  <h1>Hello, Phaser!</h1>
+  <script>
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      scene: {
+        create() {
+          this.add.text(100, 100, 'Phaser is working!', { fontSize: '32px', fill: '#fff' });
+        }
+      }
+    };
+    new Phaser.Game(config);
+  </script>
+</body>
+</html>
