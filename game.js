@@ -1,7 +1,7 @@
-// Phaser 3 예제 코드
+// Phaser 3 예제 코드 (Phaser 3.60 이상 대응)
 // 요구사항: 
 // - 최신 Phaser 버전 사용 (모바일 대응, RESIZE 설정 포함)
-// - 검은색 배경에 별들이 있는 우주 배경이 우측으로 스크롤
+// - 검은 배경에 별들이 있는 우주 배경이 우측으로 스크롤
 // - 좌측 고정된 우주선은 타원형 모양 (앞쪽은 붉은색, 나머지는 회색)
 // - 터치(혹은 마우스 클릭) 시 기준점을 잡고, 손가락(또는 마우스) 이동에 따라 우주선의 Y 위치와 회전(레버처럼)이 부드럽게 조절됨
 // - 터치를 떼면 우주선은 화면 중앙 Y와 기본 회전(0, 오른쪽을 향함)으로 부드럽게 복귀하며, 트레일은 즉시 사라짐
@@ -56,8 +56,7 @@ function createSpaceshipTexture(scene) {
     // 오른쪽 반원(타원)을 빨간색으로 채움
     gfx.fillStyle(0xff0000, 1);
     let points = [];
-    // 오른쪽 반원의 경계는 (center.x, center.y - rY)에서 시작하여
-    // 각도 -90도 ~ 90도에 해당하는 타원 곡선을 따라가고, (center.x, center.y + rY)로 닫힘.
+    // 오른쪽 반원의 경계: (center.x, center.y - rY)부터 시작하여 각도 -90도~90도
     points.push(new Phaser.Math.Vector2(center.x, center.y - rY));
     const numPoints = 30;
     for (let i = 0; i <= numPoints; i++) {
@@ -132,7 +131,8 @@ function create() {
 
         // 파티클 트레일 시작
         if (emitter) {
-            emitter.start();
+            emitter.setVisible(true);
+            emitter.active = true;
         }
     });
 
@@ -141,50 +141,51 @@ function create() {
         let offsetX = pointer.x - pointerOrigin.x;
         let offsetY = pointer.y - pointerOrigin.y;
 
-        // 터치 오프셋에 따라 우주선의 Y 위치 업데이트 (10% 위/아래 제한)
+        // 터치 오프셋에 따라 우주선의 Y 위치 업데이트 (상단 10%, 하단 10% 제한)
         let targetY = spaceshipStartY + offsetY;
         let minY = gameHeight * 0.1;
         let maxY = gameHeight * 0.9;
         targetY = Phaser.Math.Clamp(targetY, minY, maxY);
         spaceship.y = Phaser.Math.Linear(spaceship.y, targetY, 0.2);
 
-        // 기준점으로부터의 벡터를 통해 원하는 회전 각도 계산
-        // (마치 원형판의 레버가 돌아가는 것처럼)
+        // 기준점으로부터의 벡터를 통해 원하는 회전 각도 계산 (레버 효과)
         let targetAngle = Math.atan2(offsetY, offsetX);
         spaceship.rotation = Phaser.Math.Angle.RotateTo(spaceship.rotation, targetAngle, 0.1);
     });
 
     scene.input.on('pointerup', function (pointer) {
         pointerActive = false;
-        // 터치 해제 시 우주선 위치와 회전을 기본값으로 되돌리도록 Tween 실행
+        // 터치 해제 시 우주선 위치와 회전을 기본값으로 복귀 (Tween 이용)
         scene.tweens.add({
             targets: spaceship,
             y: gameHeight / 2,
-            rotation: 0, // 기본 회전: 오른쪽을 향함 (0 라디안)
+            rotation: 0, // 기본 회전: 오른쪽 (0 라디안)
             duration: 300,
             ease: 'Power2'
         });
         // 파티클 트레일 중지(터치 떼면 즉시 사라지도록)
         if (emitter) {
-            emitter.stop();
+            emitter.setVisible(false);
+            emitter.active = false;
         }
     });
 
-    // 파티클 시스템 생성: 우주선의 꽁무니(후방)에서 발사되는 효과
-    let particles = scene.add.particles('particle');
-    emitter = particles.createEmitter({
+    // 파티클 시스템 생성 (Phaser 3.60 이상 대응)
+    // 첫 번째 두 인수로 x, y (여기서는 초기 위치를 (0, 0)으로 설정), 세 번째 인수에 텍스처 키, 네 번째에 설정 객체 전달
+    emitter = scene.add.particles(0, 0, 'particle', {
         speed: { min: 50, max: 100 },
         lifespan: 300,
         blendMode: 'ADD',
-        scale: { start: 0.5, end: 0 },
-        on: false, // 초기에는 비활성화
-        frequency: 50
+        scale: { start: 0.5, end: 0 }
     });
-    // 우주선에 고정되도록 follow 설정 (왼쪽으로 오프셋: spaceship의 폭의 절반 정도)
+    // 우주선 후방에 트레일 효과를 위해 follow 설정 (왼쪽 오프셋: 우주선 폭의 절반 정도)
     emitter.startFollow(spaceship, -30, 0);
+    // 초기에는 파티클을 보이지 않도록 처리
+    emitter.setVisible(false);
+    emitter.active = false;
 }
 
 function update() {
-    // 배경 타일 스프라이트의 tilePosition.x 를 증가시켜 우측 스크롤 효과 구현
+    // 배경 타일 스프라이트의 tilePosition.x 증가로 우측 스크롤 효과 구현
     bg.tilePositionX += BG_SCROLL_SPEED;
 }
